@@ -44,17 +44,16 @@ const ROLE_BADGE: Record<string, { label: string; style: string }> = {
 };
 
 export function AppSidebar() {
-<<<<<<< HEAD
   const { role, currentBusiness, currentBranch, logout, sidebarOpen, setSidebarOpen, isActivationPending } = useApp();
-  const links = isActivationPending
-    ? [{ to: "/", label: "Dashboard", icon: LayoutDashboard, end: true }]
-    : role === "admin"
-      ? ADMIN_LINKS
-      : CASHIER_LINKS;
-=======
-  const { role, currentBusiness, currentBranch, logout, sidebarOpen, setSidebarOpen } = useApp();
-  const links = role === "owner" ? OWNER_LINKS : role === "admin" ? ADMIN_LINKS : CASHIER_LINKS;
->>>>>>> e5ea5184f5aba375fa5cc9a7f3f39fa558a6b82c
+
+  const links = role === "owner"
+    ? OWNER_LINKS
+    : isActivationPending
+      ? [{ to: "/", label: "Dashboard", icon: LayoutDashboard, end: true }]
+      : role === "admin"
+        ? ADMIN_LINKS
+        : CASHIER_LINKS;
+
   const location = useLocation();
   const isOwner = role === "owner";
   const bizConfig = !isOwner ? BUSINESS_TYPE_CONFIG[currentBusiness.type] : null;
@@ -135,11 +134,7 @@ export function AppSidebar() {
               badge.style
             )}>
               <span className="w-1.5 h-1.5 rounded-full bg-current" />
-<<<<<<< HEAD
-              {isActivationPending ? "Pending Activation" : role === "admin" ? "Admin View" : "Cashier View"}
-=======
-              {badge.label}
->>>>>>> e5ea5184f5aba375fa5cc9a7f3f39fa558a6b82c
+              {isActivationPending ? "Pending Activation" : badge.label}
             </span>
           </div>
         )}
