@@ -37,12 +37,19 @@ const CASHIER_LINKS = [
   { to: "/customers", label: "Customers", icon: Users },
 ];
 
+const ROLE_BADGE: Record<string, { label: string; style: string }> = {
+  owner: { label: "System Owner", style: "bg-warning/20 text-warning" },
+  admin: { label: "Admin View", style: "bg-primary/20 text-primary-glow" },
+  cashier: { label: "Cashier View", style: "bg-success/20 text-success" },
+};
+
 export function AppSidebar() {
   const { role, currentBusiness, currentBranch, logout, sidebarOpen, setSidebarOpen } = useApp();
-  const links = role === "admin" ? ADMIN_LINKS : CASHIER_LINKS;
+  const links = role === "owner" ? OWNER_LINKS : role === "admin" ? ADMIN_LINKS : CASHIER_LINKS;
   const location = useLocation();
-  const BizIcon = BUSINESS_TYPE_CONFIG[currentBusiness.type].icon;
-  const bizGradient = BUSINESS_TYPE_CONFIG[currentBusiness.type].gradient;
+  const isOwner = role === "owner";
+  const BizIcon = !isOwner ? BUSINESS_TYPE_CONFIG[currentBusiness.type].icon : null;
+  const bizGradient = !isOwner ? BUSINESS_TYPE_CONFIG[currentBusiness.type].gradient : null;
 
   return (
     <>
