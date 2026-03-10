@@ -30,8 +30,12 @@ const CASHIER_LINKS = [
 ];
 
 export function AppSidebar() {
-  const { role, currentBusiness, currentBranch, logout, sidebarOpen, setSidebarOpen } = useApp();
-  const links = role === "admin" ? ADMIN_LINKS : CASHIER_LINKS;
+  const { role, currentBusiness, currentBranch, logout, sidebarOpen, setSidebarOpen, isActivationPending } = useApp();
+  const links = isActivationPending
+    ? [{ to: "/", label: "Dashboard", icon: LayoutDashboard, end: true }]
+    : role === "admin"
+      ? ADMIN_LINKS
+      : CASHIER_LINKS;
   const location = useLocation();
   const BizIcon = BUSINESS_TYPE_CONFIG[currentBusiness.type].icon;
   const bizGradient = BUSINESS_TYPE_CONFIG[currentBusiness.type].gradient;
@@ -107,7 +111,7 @@ export function AppSidebar() {
                 : "bg-success/20 text-success"
             )}>
               <span className="w-1.5 h-1.5 rounded-full bg-current" />
-              {role === "admin" ? "Admin View" : "Cashier View"}
+              {isActivationPending ? "Pending Activation" : role === "admin" ? "Admin View" : "Cashier View"}
             </span>
           </div>
         )}

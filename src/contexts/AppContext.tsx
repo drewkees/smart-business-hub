@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode } from "react";
 
-export type UserRole = "admin" | "cashier";
+export type UserRole = "superadmin" | "admin" | "cashier";
 
 export type BusinessType =
   | "restaurant"
@@ -22,6 +22,8 @@ export interface Business {
   name: string;
   type: BusinessType;
   branches: Branch[];
+  activationStatus?: "pending" | "active" | "suspended";
+  activationKey?: string;
 }
 
 interface AppContextValue {
@@ -32,11 +34,12 @@ interface AppContextValue {
   currentBranch: Branch;
   setCurrentBranch: (b: Branch) => void;
   isLoggedIn: boolean;
-  login: (role: UserRole, business: Business) => void;
+  login: (role: UserRole, business?: Business) => void;
   logout: () => void;
   sidebarOpen: boolean;
   setSidebarOpen: (v: boolean) => void;
   businesses: Business[];
+  isActivationPending: boolean;
 }
 
 const DEMO_BUSINESSES: Business[] = [
@@ -90,10 +93,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  function login(r: UserRole, business: Business) {
+  function buildActivationKey(businessId: string) {
+    return `ACT-${businessId.split("-")[0].toUpperCase()}`;
+  }
+
+  function login(r: UserRole, business?: Business) {
+    const resolvedBusiness = business ?? DEMO_BUSINESSES[0];
     setRole(r);
-    setCurrentBusiness(business);
-    setCurrentBranch(business.branches[0]);
+    setCurrentBusiness({
+      ...resolvedBusiness,
+      activationStatus: resolvedBusiness.activationStatus ?? "active",
+      activationKey: resolvedBusiness.activationKey ?? buildActivationKey(resolvedBusiness.id),
+    });
+    setCurrentBranch(resolvedBusiness.branches[0] ?? { id: "main", name: "Main Branch", location: "N/A" });
     setIsLoggedIn(true);
   }
 
@@ -116,6 +128,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         sidebarOpen,
         setSidebarOpen,
         businesses: DEMO_BUSINESSES,
+        isActivationPending: role !== "superadmin" && (currentBusiness.activationStatus ?? "active") !== "active",
       }}
     >
       {children}

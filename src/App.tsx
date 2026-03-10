@@ -13,13 +13,32 @@ import Reports from "./pages/Reports";
 import Customers from "./pages/Customers";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import SuperAdmin from "./pages/SuperAdmin";
 
 const queryClient = new QueryClient();
 
 function AppRoutes() {
-  const { isLoggedIn, role } = useApp();
+  const { isLoggedIn, role, isActivationPending } = useApp();
 
   if (!isLoggedIn) return <Login />;
+
+  if (role === "superadmin") {
+    return (
+      <Routes>
+        <Route path="/" element={<SuperAdmin />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    );
+  }
+
+  if (isActivationPending) {
+    return (
+      <Routes>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    );
+  }
 
   return (
     <Routes>
