@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AppProvider, useApp } from "@/contexts/AppContext";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import SystemDashboard from "./pages/SystemDashboard";
+import BusinessManagement from "./pages/BusinessManagement";
 import POSScreen from "./pages/POSScreen";
 import Inventory from "./pages/Inventory";
 import Orders from "./pages/Orders";
@@ -20,6 +22,19 @@ function AppRoutes() {
   const { isLoggedIn, role } = useApp();
 
   if (!isLoggedIn) return <Login />;
+
+  if (role === "owner") {
+    return (
+      <Routes>
+        <Route path="/" element={<SystemDashboard />} />
+        <Route path="/businesses" element={<BusinessManagement />} />
+        <Route path="/platform-users" element={<Customers />} />
+        <Route path="/billing" element={<Settings />} />
+        <Route path="/system-settings" element={<Settings />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    );
+  }
 
   return (
     <Routes>

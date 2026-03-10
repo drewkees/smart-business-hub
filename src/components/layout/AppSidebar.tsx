@@ -5,10 +5,18 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, ShoppingCart, Package, ClipboardList, BarChart3,
-  Users, Truck, Settings, UserCog, GitBranch, X, Store,
-  Calendar, DollarSign, Bell, LogOut, ChevronRight,
+  Users, Truck, Settings, UserCog, GitBranch, X,
+  LogOut, ChevronRight, Building2, Globe, DollarSign, Shield, Activity,
 } from "lucide-react";
 import { BUSINESS_TYPE_CONFIG } from "@/lib/businessConfig";
+
+const OWNER_LINKS = [
+  { to: "/", label: "System Overview", icon: Activity, end: true },
+  { to: "/businesses", label: "Businesses", icon: Building2 },
+  { to: "/platform-users", label: "All Users", icon: Users },
+  { to: "/billing", label: "Billing & Plans", icon: DollarSign },
+  { to: "/system-settings", label: "System Settings", icon: Shield },
+];
 
 const ADMIN_LINKS = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
