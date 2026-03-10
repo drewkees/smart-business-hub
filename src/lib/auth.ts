@@ -174,13 +174,15 @@ export async function signInWithEmailPassword(email: string, password: string): 
     };
   }
 
-  const branchRow = membership.branch ?? { id: "main", name: "Main Branch", location: "N/A" };
+  const biz = Array.isArray(membership.business) ? membership.business[0] : membership.business;
+  const branchRaw = Array.isArray(membership.branch) ? membership.branch[0] : membership.branch;
+  const branchRow = branchRaw ?? { id: "main", name: "Main Branch", location: "N/A" };
   const business: Business = {
-    id: membership.business.id,
-    name: membership.business.name,
-    type: toBusinessType(membership.business.type),
-    activationStatus: membership.business.activation_status ?? "pending",
-    activationKey: `ACT-${membership.business.id.split("-")[0].toUpperCase()}`,
+    id: biz.id,
+    name: biz.name,
+    type: toBusinessType(biz.type),
+    activationStatus: biz.activation_status ?? "pending",
+    activationKey: `ACT-${biz.id.split("-")[0].toUpperCase()}`,
     branches: [
       {
         id: branchRow.id,
