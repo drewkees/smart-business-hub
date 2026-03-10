@@ -6,7 +6,7 @@ import { BUSINESS_TYPE_CONFIG } from "@/lib/businessConfig";
 import { cn } from "@/lib/utils";
 import {
   ShieldCheck, User, ChevronRight, Store, ArrowLeft,
-  Zap, Globe,
+  Zap, Globe, Crown,
 } from "lucide-react";
 
 type Step = "role" | "business";
