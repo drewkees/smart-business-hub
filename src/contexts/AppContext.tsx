@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode } from "react";
 
-export type UserRole = "admin" | "cashier";
+export type UserRole = "owner" | "admin" | "cashier";
 
 export type BusinessType =
   | "restaurant"
