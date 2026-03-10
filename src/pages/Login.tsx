@@ -7,13 +7,9 @@ import { cn } from "@/lib/utils";
 import { registerBusinessOwner, sendPasswordReset, signInWithEmailPassword } from "@/lib/auth";
 import {
   ShieldCheck, User, ChevronRight, Store, ArrowLeft,
-<<<<<<< HEAD
-  Zap, Globe, Building2,
+  Zap, Globe, Building2, Crown,
   Upload, X, Check, UserPlus, KeyRound,
   Camera,
-=======
-  Zap, Globe, Crown,
->>>>>>> e5ea5184f5aba375fa5cc9a7f3f39fa558a6b82c
 } from "lucide-react";
 
 type Tab = "login" | "register";
@@ -39,7 +35,6 @@ export default function Login() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [authInfo, setAuthInfo] = useState<string | null>(null);
 
-<<<<<<< HEAD
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
   const [registerForm, setRegisterForm] = useState({
     businessName: "",
@@ -60,23 +55,16 @@ export default function Login() {
     const reader = new FileReader();
     reader.onload = (ev) => setLogoPreview(ev.target?.result as string);
     reader.readAsDataURL(file);
-=======
-  function handleRoleSelect(role: UserRole) {
-    setSelectedRole(role);
-    if (role === "owner") {
-      // Owner doesn't need to pick a business — log in directly
-      login(role, DEMO_BUSINESSES[0]);
-      navigate("/");
-    } else {
-      setStep("business");
-    }
->>>>>>> e5ea5184f5aba375fa5cc9a7f3f39fa558a6b82c
   }
 
-  function handleDemoLogin() {
+  function handleDemoLogin(role: UserRole = "admin") {
     setAuthError(null);
     setAuthInfo(null);
-    login("admin", DEMO_BUSINESSES[0]);
+    if (role === "owner") {
+      login("owner", DEMO_BUSINESSES[0]);
+    } else {
+      login(role, DEMO_BUSINESSES[0]);
+    }
     navigate("/");
   }
 
@@ -145,7 +133,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-background flex">
-      {/* ── LEFT PANEL (unchanged) ── */}
+      {/* ── LEFT PANEL ── */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-sidebar flex-col justify-between p-12">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-0 left-0 w-96 h-96 bg-primary rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
@@ -247,36 +235,12 @@ export default function Login() {
                 {authInfo && <p className="rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-xs text-primary">{authInfo}</p>}
 
                 <div className="space-y-3">
-<<<<<<< HEAD
                   <input
                     type="email"
                     placeholder="Email address"
                     value={loginForm.email}
                     onChange={e => setLoginForm(f => ({ ...f, email: e.target.value }))}
                     className={cn(inputClass, "h-11 px-4")}
-=======
-                  <RoleCard
-                    icon={Crown}
-                    role="owner"
-                    title="System Owner"
-                    description="Platform-level control. Manage all registered businesses, users, billing, subscriptions, and global system configuration."
-                    gradient="from-amber-500 to-orange-500"
-                    badge="Platform Admin"
-                    badgeColor="bg-warning/10 text-warning"
-                    perms={["All Businesses", "Billing & Plans", "Platform Users", "System Config"]}
-                    onClick={() => handleRoleSelect("owner")}
-                  />
-                  <RoleCard
-                    icon={ShieldCheck}
-                    role="admin"
-                    title="Business Admin"
-                    description="Full dashboard access, analytics, reports, multi-branch control, user management, and business settings."
-                    gradient="from-blue-600 to-indigo-600"
-                    badge="Full Access"
-                    badgeColor="bg-primary/10 text-primary"
-                    perms={["Dashboard & Analytics", "Inventory & Products", "Staff & Roles", "Business Settings"]}
-                    onClick={() => handleRoleSelect("admin")}
->>>>>>> e5ea5184f5aba375fa5cc9a7f3f39fa558a6b82c
                   />
 
                   <input
@@ -307,17 +271,54 @@ export default function Login() {
 
                 <div className="relative flex items-center gap-3">
                   <div className="flex-1 h-px bg-border" />
-                  <span className="text-xs text-muted-foreground">or</span>
+                  <span className="text-xs text-muted-foreground">or try a demo</span>
                   <div className="flex-1 h-px bg-border" />
                 </div>
 
-                <button
-                  onClick={handleDemoLogin}
-                  className="w-full py-3 rounded-xl font-medium text-sm border-2 border-border bg-card hover:border-primary/40 text-foreground transition-all duration-200 flex items-center justify-center gap-2"
-                >
-                  <Zap className="w-4 h-4 text-primary" />
-                  Continue with Demo Account
-                </button>
+                {/* Demo quick access cards */}
+                <div className="grid grid-cols-1 gap-2">
+                  <button
+                    onClick={() => handleDemoLogin("owner")}
+                    className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card hover:border-warning/40 hover:bg-warning/5 transition-all duration-200 group"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center flex-shrink-0">
+                      <Crown className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-sm font-semibold text-foreground">System Owner</p>
+                      <p className="text-xs text-muted-foreground">Manage all businesses & platform</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground ml-auto group-hover:text-warning transition-colors" />
+                  </button>
+
+                  <button
+                    onClick={() => handleDemoLogin("admin")}
+                    className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card hover:border-primary/40 hover:bg-primary/5 transition-all duration-200 group"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center flex-shrink-0">
+                      <ShieldCheck className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-sm font-semibold text-foreground">Business Admin</p>
+                      <p className="text-xs text-muted-foreground">Full dashboard & analytics</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground ml-auto group-hover:text-primary transition-colors" />
+                  </button>
+
+                  <button
+                    onClick={() => handleDemoLogin("cashier")}
+                    className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card hover:border-success/40 hover:bg-success/5 transition-all duration-200 group"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center flex-shrink-0">
+                      <User className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-sm font-semibold text-foreground">Cashier</p>
+                      <p className="text-xs text-muted-foreground">POS checkout interface</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground ml-auto group-hover:text-success transition-colors" />
+                  </button>
+                </div>
 
                 <p className="text-center text-xs text-muted-foreground">
                   New business?{" "}
@@ -427,7 +428,6 @@ export default function Login() {
                         </div>
                       </div>
 
-                      {/* Business Name */}
                       <input
                         placeholder="Business name"
                         value={registerForm.businessName}
@@ -435,7 +435,6 @@ export default function Login() {
                         className={cn(inputClass, "h-11 px-4")}
                       />
 
-                      {/* Business Type */}
                       <select
                         value={registerForm.businessType}
                         onChange={e => setRegisterForm(f => ({ ...f, businessType: e.target.value }))}
@@ -447,7 +446,6 @@ export default function Login() {
                         ))}
                       </select>
 
-                      {/* Location */}
                       <input
                         placeholder="Business location / address"
                         value={registerForm.location}
@@ -455,7 +453,6 @@ export default function Login() {
                         className={cn(inputClass, "h-11 px-4")}
                       />
 
-                      {/* Email */}
                       <input
                         type="email"
                         placeholder="Business email"
@@ -464,7 +461,6 @@ export default function Login() {
                         className={cn(inputClass, "h-11 px-4")}
                       />
 
-                      {/* Phone */}
                       <input
                         type="tel"
                         placeholder="Phone number"
@@ -517,7 +513,6 @@ export default function Login() {
                         </button>
                       </div>
 
-                      {/* Business summary pill */}
                       <div className="flex items-center gap-3 p-3 rounded-xl bg-secondary border border-border">
                         {logoPreview
                           ? <img src={logoPreview} className="w-9 h-9 rounded-lg object-cover flex-shrink-0" />
@@ -557,7 +552,6 @@ export default function Login() {
                         className={cn(inputClass, "h-11 px-4")}
                       />
 
-                      {/* Password strength */}
                       {registerForm.ownerPassword && (
                         <div className="space-y-1.5">
                           <div className="flex gap-1">
@@ -576,20 +570,20 @@ export default function Login() {
                         </div>
                       )}
 
-                        <button
-                          onClick={handleRegisterSubmit}
-                          type="button"
-                          disabled={authLoading || !registerForm.ownerName || !registerForm.ownerEmail || !registerForm.ownerPassword}
-                          className={cn(
-                            "w-full py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200",
-                            !authLoading && registerForm.ownerName && registerForm.ownerEmail && registerForm.ownerPassword
-                              ? "gradient-primary text-white shadow-primary hover:shadow-lg"
-                              : "bg-muted text-muted-foreground cursor-not-allowed"
-                          )}
-                        >
-                          <UserPlus className="w-4 h-4" />
+                      <button
+                        onClick={handleRegisterSubmit}
+                        type="button"
+                        disabled={authLoading || !registerForm.ownerName || !registerForm.ownerEmail || !registerForm.ownerPassword}
+                        className={cn(
+                          "w-full py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200",
+                          !authLoading && registerForm.ownerName && registerForm.ownerEmail && registerForm.ownerPassword
+                            ? "gradient-primary text-white shadow-primary hover:shadow-lg"
+                            : "bg-muted text-muted-foreground cursor-not-allowed"
+                        )}
+                      >
+                        <UserPlus className="w-4 h-4" />
                         {authLoading ? "Submitting..." : "Submit Registration"}
-                        </button>
+                      </button>
 
                       <p className="text-xs text-muted-foreground text-center leading-relaxed">
                         By registering, your business will be reviewed and approved by our team within 24 hours.

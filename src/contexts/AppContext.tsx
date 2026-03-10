@@ -1,10 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode } from "react";
 
-<<<<<<< HEAD
-export type UserRole = "superadmin" | "admin" | "cashier";
-=======
 export type UserRole = "owner" | "admin" | "cashier";
->>>>>>> e5ea5184f5aba375fa5cc9a7f3f39fa558a6b82c
 
 export type BusinessType =
   | "restaurant"
@@ -132,7 +128,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         sidebarOpen,
         setSidebarOpen,
         businesses: DEMO_BUSINESSES,
-        isActivationPending: role !== "superadmin" && (currentBusiness.activationStatus ?? "active") !== "active",
+        isActivationPending: role !== "owner" && (currentBusiness.activationStatus ?? "active") !== "active",
       }}
     >
       {children}

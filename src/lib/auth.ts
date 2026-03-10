@@ -11,7 +11,7 @@ function toBusinessType(value: string): BusinessType {
 }
 
 function toAppRole(role: string): UserRole {
-  if (role === "superadmin") return "superadmin";
+  if (role === "owner") return "owner";
   return role === "cashier" ? "cashier" : "admin";
 }
 
@@ -45,12 +45,12 @@ export async function signInWithEmailPassword(email: string, password: string): 
 
   if (membershipError) throw membershipError;
 
-  if (membership && membership.role === "superadmin") {
+  if (membership && membership.role === "owner") {
     return {
-      role: "superadmin",
+      role: "owner",
       business: {
-        id: "superadmin",
-        name: "Super Admin",
+        id: "platform",
+        name: "BizPOS Pro",
         type: "retail",
         activationStatus: "active",
         branches: [{ id: "hq", name: "Head Office", location: "Global" }],
@@ -121,8 +121,6 @@ export async function signInWithEmailPassword(email: string, password: string): 
     const inferredName = authData.user.email ? `${authData.user.email.split("@")[0]}'s Business` : "My Business";
     const inferredType = "retail";
     const inferredEmail = authData.user.email || email;
-    const inferredPhone = null;
-    const inferredAddress = null;
 
     const { data: createdBusiness, error: createdBusinessError } = await supabase
       .from("businesses")
@@ -130,8 +128,8 @@ export async function signInWithEmailPassword(email: string, password: string): 
         name: inferredName,
         type: inferredType,
         email: inferredEmail,
-        phone: inferredPhone,
-        address: inferredAddress,
+        phone: null,
+        address: null,
         owner_user_id: authData.user.id,
         is_configured: false,
         activation_status: "pending",
@@ -146,7 +144,7 @@ export async function signInWithEmailPassword(email: string, password: string): 
       .insert({
         business_id: createdBusiness.id,
         name: "Main Branch",
-        location: inferredAddress || "Main Office",
+        location: "Main Office",
         is_main: true,
       })
       .select("id,name,location")
@@ -176,13 +174,15 @@ export async function signInWithEmailPassword(email: string, password: string): 
     };
   }
 
-  const branchRow = membership.branch ?? { id: "main", name: "Main Branch", location: "N/A" };
+  const biz = Array.isArray(membership.business) ? membership.business[0] : membership.business;
+  const branchRaw = Array.isArray(membership.branch) ? membership.branch[0] : membership.branch;
+  const branchRow = branchRaw ?? { id: "main", name: "Main Branch", location: "N/A" };
   const business: Business = {
-    id: membership.business.id,
-    name: membership.business.name,
-    type: toBusinessType(membership.business.type),
-    activationStatus: membership.business.activation_status ?? "pending",
-    activationKey: `ACT-${membership.business.id.split("-")[0].toUpperCase()}`,
+    id: biz.id,
+    name: biz.name,
+    type: toBusinessType(biz.type),
+    activationStatus: biz.activation_status ?? "pending",
+    activationKey: `ACT-${biz.id.split("-")[0].toUpperCase()}`,
     branches: [
       {
         id: branchRow.id,
@@ -280,8 +280,6 @@ export async function registerBusinessOwner(payload: RegisterPayload): Promise<v
   });
 
   if (membershipError) throw membershipError;
-
-  return;
 }
 
 export async function sendPasswordReset(email: string) {

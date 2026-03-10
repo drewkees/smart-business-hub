@@ -15,7 +15,6 @@ import Reports from "./pages/Reports";
 import Customers from "./pages/Customers";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
-import SuperAdmin from "./pages/SuperAdmin";
 
 const queryClient = new QueryClient();
 
@@ -24,11 +23,14 @@ function AppRoutes() {
 
   if (!isLoggedIn) return <Login />;
 
-<<<<<<< HEAD
-  if (role === "superadmin") {
+  if (role === "owner") {
     return (
       <Routes>
-        <Route path="/" element={<SuperAdmin />} />
+        <Route path="/" element={<SystemDashboard />} />
+        <Route path="/businesses" element={<BusinessManagement />} />
+        <Route path="/platform-users" element={<Customers />} />
+        <Route path="/billing" element={<Settings />} />
+        <Route path="/system-settings" element={<Settings />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     );
@@ -38,16 +40,6 @@ function AppRoutes() {
     return (
       <Routes>
         <Route path="/" element={<Dashboard />} />
-=======
-  if (role === "owner") {
-    return (
-      <Routes>
-        <Route path="/" element={<SystemDashboard />} />
-        <Route path="/businesses" element={<BusinessManagement />} />
-        <Route path="/platform-users" element={<Customers />} />
-        <Route path="/billing" element={<Settings />} />
-        <Route path="/system-settings" element={<Settings />} />
->>>>>>> e5ea5184f5aba375fa5cc9a7f3f39fa558a6b82c
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     );
