@@ -5,10 +5,18 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, ShoppingCart, Package, ClipboardList, BarChart3,
-  Users, Truck, Settings, UserCog, GitBranch, X, Store,
-  Calendar, DollarSign, Bell, LogOut, ChevronRight,
+  Users, Truck, Settings, UserCog, GitBranch, X,
+  LogOut, ChevronRight, Building2, DollarSign, Shield, Activity, Zap,
 } from "lucide-react";
 import { BUSINESS_TYPE_CONFIG } from "@/lib/businessConfig";
+
+const OWNER_LINKS = [
+  { to: "/", label: "System Overview", icon: Activity, end: true },
+  { to: "/businesses", label: "Businesses", icon: Building2 },
+  { to: "/platform-users", label: "All Users", icon: Users },
+  { to: "/billing", label: "Billing & Plans", icon: DollarSign },
+  { to: "/system-settings", label: "System Settings", icon: Shield },
+];
 
 const ADMIN_LINKS = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
@@ -29,16 +37,28 @@ const CASHIER_LINKS = [
   { to: "/customers", label: "Customers", icon: Users },
 ];
 
+const ROLE_BADGE: Record<string, { label: string; style: string }> = {
+  owner: { label: "System Owner", style: "bg-warning/20 text-warning" },
+  admin: { label: "Admin View", style: "bg-primary/20 text-primary-glow" },
+  cashier: { label: "Cashier View", style: "bg-success/20 text-success" },
+};
+
 export function AppSidebar() {
+<<<<<<< HEAD
   const { role, currentBusiness, currentBranch, logout, sidebarOpen, setSidebarOpen, isActivationPending } = useApp();
   const links = isActivationPending
     ? [{ to: "/", label: "Dashboard", icon: LayoutDashboard, end: true }]
     : role === "admin"
       ? ADMIN_LINKS
       : CASHIER_LINKS;
+=======
+  const { role, currentBusiness, currentBranch, logout, sidebarOpen, setSidebarOpen } = useApp();
+  const links = role === "owner" ? OWNER_LINKS : role === "admin" ? ADMIN_LINKS : CASHIER_LINKS;
+>>>>>>> e5ea5184f5aba375fa5cc9a7f3f39fa558a6b82c
   const location = useLocation();
-  const BizIcon = BUSINESS_TYPE_CONFIG[currentBusiness.type].icon;
-  const bizGradient = BUSINESS_TYPE_CONFIG[currentBusiness.type].gradient;
+  const isOwner = role === "owner";
+  const bizConfig = !isOwner ? BUSINESS_TYPE_CONFIG[currentBusiness.type] : null;
+  const badge = ROLE_BADGE[role];
 
   return (
     <>
@@ -65,17 +85,23 @@ export function AppSidebar() {
           !sidebarOpen && "-translate-x-full lg:translate-x-0"
         )}
       >
-        {/* Logo */}
+        {/* Logo / Brand */}
         <div className={cn(
           "flex items-center gap-3 px-4 py-5 border-b border-sidebar-border",
           !sidebarOpen && "lg:justify-center lg:px-2"
         )}>
-          <div className={cn(
-            "w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0",
-            `bg-gradient-to-br ${bizGradient}`
-          )}>
-            <BizIcon className="w-5 h-5 text-white" />
-          </div>
+          {isOwner ? (
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-warning to-amber-400">
+              <Zap className="w-5 h-5 text-white" />
+            </div>
+          ) : (
+            <div className={cn(
+              "w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0",
+              `bg-gradient-to-br ${bizConfig?.gradient}`
+            )}>
+              {bizConfig && <bizConfig.icon className="w-5 h-5 text-white" />}
+            </div>
+          )}
           {sidebarOpen && (
             <motion.div
               initial={{ opacity: 0 }}
@@ -84,10 +110,10 @@ export function AppSidebar() {
               className="flex-1 min-w-0"
             >
               <p className="text-sidebar-foreground font-semibold text-sm truncate leading-tight">
-                {currentBusiness.name}
+                {isOwner ? "BizPOS Pro" : currentBusiness.name}
               </p>
               <p className="text-sidebar-accent-foreground/60 text-xs truncate">
-                {currentBranch.name}
+                {isOwner ? "Platform Control" : currentBranch.name}
               </p>
             </motion.div>
           )}
@@ -106,12 +132,14 @@ export function AppSidebar() {
           <div className="px-4 py-2">
             <span className={cn(
               "inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full",
-              role === "admin"
-                ? "bg-primary/20 text-primary-glow"
-                : "bg-success/20 text-success"
+              badge.style
             )}>
               <span className="w-1.5 h-1.5 rounded-full bg-current" />
+<<<<<<< HEAD
               {isActivationPending ? "Pending Activation" : role === "admin" ? "Admin View" : "Cashier View"}
+=======
+              {badge.label}
+>>>>>>> e5ea5184f5aba375fa5cc9a7f3f39fa558a6b82c
             </span>
           </div>
         )}
@@ -154,7 +182,7 @@ export function AppSidebar() {
             onClick={logout}
             className={cn(
               "w-full flex items-center gap-3 px-2.5 py-2.5 rounded-lg text-sm font-medium transition-all duration-150",
-              "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-red-400",
+              "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-destructive",
               !sidebarOpen && "lg:justify-center"
             )}
           >

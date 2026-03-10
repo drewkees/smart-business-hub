@@ -7,9 +7,13 @@ import { cn } from "@/lib/utils";
 import { registerBusinessOwner, sendPasswordReset, signInWithEmailPassword } from "@/lib/auth";
 import {
   ShieldCheck, User, ChevronRight, Store, ArrowLeft,
+<<<<<<< HEAD
   Zap, Globe, Building2,
   Upload, X, Check, UserPlus, KeyRound,
   Camera,
+=======
+  Zap, Globe, Crown,
+>>>>>>> e5ea5184f5aba375fa5cc9a7f3f39fa558a6b82c
 } from "lucide-react";
 
 type Tab = "login" | "register";
@@ -35,6 +39,7 @@ export default function Login() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [authInfo, setAuthInfo] = useState<string | null>(null);
 
+<<<<<<< HEAD
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
   const [registerForm, setRegisterForm] = useState({
     businessName: "",
@@ -55,6 +60,17 @@ export default function Login() {
     const reader = new FileReader();
     reader.onload = (ev) => setLogoPreview(ev.target?.result as string);
     reader.readAsDataURL(file);
+=======
+  function handleRoleSelect(role: UserRole) {
+    setSelectedRole(role);
+    if (role === "owner") {
+      // Owner doesn't need to pick a business — log in directly
+      login(role, DEMO_BUSINESSES[0]);
+      navigate("/");
+    } else {
+      setStep("business");
+    }
+>>>>>>> e5ea5184f5aba375fa5cc9a7f3f39fa558a6b82c
   }
 
   function handleDemoLogin() {
@@ -231,12 +247,36 @@ export default function Login() {
                 {authInfo && <p className="rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-xs text-primary">{authInfo}</p>}
 
                 <div className="space-y-3">
+<<<<<<< HEAD
                   <input
                     type="email"
                     placeholder="Email address"
                     value={loginForm.email}
                     onChange={e => setLoginForm(f => ({ ...f, email: e.target.value }))}
                     className={cn(inputClass, "h-11 px-4")}
+=======
+                  <RoleCard
+                    icon={Crown}
+                    role="owner"
+                    title="System Owner"
+                    description="Platform-level control. Manage all registered businesses, users, billing, subscriptions, and global system configuration."
+                    gradient="from-amber-500 to-orange-500"
+                    badge="Platform Admin"
+                    badgeColor="bg-warning/10 text-warning"
+                    perms={["All Businesses", "Billing & Plans", "Platform Users", "System Config"]}
+                    onClick={() => handleRoleSelect("owner")}
+                  />
+                  <RoleCard
+                    icon={ShieldCheck}
+                    role="admin"
+                    title="Business Admin"
+                    description="Full dashboard access, analytics, reports, multi-branch control, user management, and business settings."
+                    gradient="from-blue-600 to-indigo-600"
+                    badge="Full Access"
+                    badgeColor="bg-primary/10 text-primary"
+                    perms={["Dashboard & Analytics", "Inventory & Products", "Staff & Roles", "Business Settings"]}
+                    onClick={() => handleRoleSelect("admin")}
+>>>>>>> e5ea5184f5aba375fa5cc9a7f3f39fa558a6b82c
                   />
 
                   <input
