@@ -20,7 +20,13 @@ export default function Login() {
 
   function handleRoleSelect(role: UserRole) {
     setSelectedRole(role);
-    setStep("business");
+    if (role === "owner") {
+      // Owner doesn't need to pick a business — log in directly
+      login(role, DEMO_BUSINESSES[0]);
+      navigate("/");
+    } else {
+      setStep("business");
+    }
   }
 
   function handleLogin() {
