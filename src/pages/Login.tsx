@@ -120,9 +120,20 @@ export default function Login() {
 
                 <div className="space-y-3">
                   <RoleCard
+                    icon={Crown}
+                    role="owner"
+                    title="System Owner"
+                    description="Platform-level control. Manage all registered businesses, users, billing, subscriptions, and global system configuration."
+                    gradient="from-amber-500 to-orange-500"
+                    badge="Platform Admin"
+                    badgeColor="bg-warning/10 text-warning"
+                    perms={["All Businesses", "Billing & Plans", "Platform Users", "System Config"]}
+                    onClick={() => handleRoleSelect("owner")}
+                  />
+                  <RoleCard
                     icon={ShieldCheck}
                     role="admin"
-                    title="Administrator"
+                    title="Business Admin"
                     description="Full dashboard access, analytics, reports, multi-branch control, user management, and business settings."
                     gradient="from-blue-600 to-indigo-600"
                     badge="Full Access"
