@@ -115,7 +115,7 @@ export default function SuperAdmin() {
             {tab === "businesses" && (
               <BusinessesPanel rows={filteredBusinesses} loading={loading} savingId={savingId} onActivate={setStatus} />
             )}
-            {tab === "users" && <UsersPanel users={filteredUsers} />}
+            {tab === "users" && <UsersPanel />}
             {tab === "systemmenu" && <SystemMenuPanel />}
             {tab === "menuuserauth" && <MenuUserAuthorizationPanel />}
             {tab === "billing" && <BillingPanel totalBusinesses={stats.total} activeBusinesses={stats.active} />}
