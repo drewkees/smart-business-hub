@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { loadAccessFromCurrentSession } from "@/lib/auth";
+import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 
 export type UserRole = "owner" | "admin" | "cashier";
 
@@ -21,6 +23,7 @@ export interface Business {
   id: string;
   name: string;
   type: BusinessType;
+  logoUrl?: string | null;
   branches: Branch[];
   activationStatus?: "pending" | "active" | "suspended";
   activationKey?: string;
@@ -40,6 +43,7 @@ interface AppContextValue {
   setSidebarOpen: (v: boolean) => void;
   businesses: Business[];
   isActivationPending: boolean;
+  isAuthReady: boolean;
 }
 
 const DEMO_BUSINESSES: Business[] = [
@@ -85,33 +89,127 @@ const DEMO_BUSINESSES: Business[] = [
 ];
 
 const AppContext = createContext<AppContextValue | null>(null);
+const AUTH_CACHE_KEY = "bizpos_auth_cache_v1";
+
+type AuthCache = {
+  role: UserRole;
+  business: Business;
+  savedAt: number;
+};
+
+function readAuthCache(): AuthCache | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(AUTH_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<AuthCache>;
+    if (!parsed || !parsed.role || !parsed.business || !Array.isArray(parsed.business.branches)) return null;
+    return parsed as AuthCache;
+  } catch {
+    return null;
+  }
+}
+
+function writeAuthCache(role: UserRole, business: Business) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(
+    AUTH_CACHE_KEY,
+    JSON.stringify({
+      role,
+      business,
+      savedAt: Date.now(),
+    } satisfies AuthCache)
+  );
+}
+
+function clearAuthCache() {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(AUTH_CACHE_KEY);
+}
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [role, setRole] = useState<UserRole>("admin");
-  const [currentBusiness, setCurrentBusiness] = useState<Business>(DEMO_BUSINESSES[0]);
-  const [currentBranch, setCurrentBranch] = useState<Branch>(DEMO_BUSINESSES[0].branches[0]);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const cachedAuth = readAuthCache();
+  const [role, setRole] = useState<UserRole>(cachedAuth?.role ?? "admin");
+  const [currentBusiness, setCurrentBusiness] = useState<Business>(cachedAuth?.business ?? DEMO_BUSINESSES[0]);
+  const [currentBranch, setCurrentBranch] = useState<Branch>(cachedAuth?.business?.branches?.[0] ?? DEMO_BUSINESSES[0].branches[0]);
+  const [isLoggedIn, setIsLoggedIn] = useState(Boolean(cachedAuth));
+  const [isAuthReady, setIsAuthReady] = useState(!isSupabaseConfigured);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   function buildActivationKey(businessId: string) {
     return `ACT-${businessId.split("-")[0].toUpperCase()}`;
   }
 
-  function login(r: UserRole, business?: Business) {
+  function applyAccess(r: UserRole, business?: Business) {
     const resolvedBusiness = business ?? DEMO_BUSINESSES[0];
-    setRole(r);
-    setCurrentBusiness({
+    const normalizedBusiness: Business = {
       ...resolvedBusiness,
       activationStatus: resolvedBusiness.activationStatus ?? "active",
       activationKey: resolvedBusiness.activationKey ?? buildActivationKey(resolvedBusiness.id),
-    });
-    setCurrentBranch(resolvedBusiness.branches[0] ?? { id: "main", name: "Main Branch", location: "N/A" });
+      branches: resolvedBusiness.branches?.length ? resolvedBusiness.branches : [{ id: "main", name: "Main Branch", location: "N/A" }],
+    };
+
+    setRole(r);
+    setCurrentBusiness(normalizedBusiness);
+    setCurrentBranch(normalizedBusiness.branches[0]);
     setIsLoggedIn(true);
+    writeAuthCache(r, normalizedBusiness);
+  }
+
+  function login(r: UserRole, business?: Business) {
+    applyAccess(r, business);
   }
 
   function logout() {
+    clearAuthCache();
+    if (isSupabaseConfigured && supabase) {
+      void supabase.auth.signOut();
+    }
     setIsLoggedIn(false);
   }
+
+  useEffect(() => {
+    let mounted = true;
+
+    const restore = async () => {
+      try {
+        if (!isSupabaseConfigured || !supabase) return;
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError) throw sessionError;
+        if (!sessionData.session?.user) return;
+
+        const access = await loadAccessFromCurrentSession();
+        if (!mounted || !access) return;
+        applyAccess(access.role, access.business);
+      } catch {
+        clearAuthCache();
+        if (mounted) setIsLoggedIn(false);
+      } finally {
+        if (mounted) setIsAuthReady(true);
+      }
+    };
+
+    const { data: authListener } = isSupabaseConfigured && supabase
+      ? supabase.auth.onAuthStateChange(async (event, session) => {
+          if (!mounted) return;
+          if (!session?.user || event === "SIGNED_OUT") {
+            clearAuthCache();
+            setIsLoggedIn(false);
+          }
+        })
+      : { data: { subscription: { unsubscribe: () => undefined } } };
+
+    if (!isSupabaseConfigured) {
+      setIsAuthReady(true);
+    } else {
+      void restore();
+    }
+
+    return () => {
+      mounted = false;
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
 
   return (
     <AppContext.Provider
@@ -129,6 +227,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setSidebarOpen,
         businesses: DEMO_BUSINESSES,
         isActivationPending: role !== "owner" && (currentBusiness.activationStatus ?? "active") !== "active",
+        isAuthReady,
       }}
     >
       {children}

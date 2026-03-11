@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useApp, UserRole, Business, DEMO_BUSINESSES } from "@/contexts/AppContext";
@@ -10,6 +10,7 @@ import {
   Zap, Globe, Building2, Crown,
   Upload, X, Check, UserPlus, KeyRound,
   Camera,
+  Eye, EyeOff, AlertCircle,
 } from "lucide-react";
 
 type Tab = "login" | "register";
@@ -24,6 +25,7 @@ const BUSINESS_TYPES = [
   { value: "salon", label: "Salon & Services" },
 ];
 
+const COMMON_EMAIL_DOMAINS = ["gmail.com", "outlook.com", "yahoo.com", "icloud.com", "proton.me"];
 export default function Login() {
   const { login } = useApp();
   const navigate = useNavigate();
@@ -34,6 +36,10 @@ export default function Login() {
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [authInfo, setAuthInfo] = useState<string | null>(null);
+  const [showOwnerPassword, setShowOwnerPassword] = useState(false);
+  const [locationOptions, setLocationOptions] = useState<string[]>([]);
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [locationOpen, setLocationOpen] = useState(false);
 
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
   const [registerForm, setRegisterForm] = useState({
@@ -82,7 +88,12 @@ export default function Login() {
       login(result.role, result.business);
       navigate(result.role === "cashier" ? "/pos" : "/");
     } catch (error: any) {
-      setAuthError(error?.message || "Unable to sign in.");
+      const raw = String(error?.message || "");
+      if (raw.toLowerCase().includes("invalid login credentials")) {
+        setAuthError("Incorrect email or password. Please try again.");
+      } else {
+        setAuthError(raw || "Unable to sign in.");
+      }
     } finally {
       setAuthLoading(false);
     }
@@ -123,13 +134,86 @@ export default function Login() {
     }
   }
 
+  function submitOnEnter(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (!authLoading) {
+        handleSignIn();
+      }
+    }
+  }
+
   const inputClass = `
     w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-foreground
-    placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/60
+    placeholder:text-muted-foreground/85 focus:outline-none focus:border-primary/60
     focus:ring-2 focus:ring-primary/10 transition-all duration-200
   `;
 
   const step1Valid = registerForm.businessName && registerForm.businessType && registerForm.location && registerForm.email;
+  const businessEmailSuggestions = (() => {
+    const raw = registerForm.email.trim().toLowerCase();
+    if (!raw) return COMMON_EMAIL_DOMAINS.map((domain) => `contact@${domain}`);
+
+    const atIndex = raw.indexOf("@");
+    if (atIndex === -1) {
+      return COMMON_EMAIL_DOMAINS.map((domain) => `${raw}@${domain}`);
+    }
+
+    const local = raw.slice(0, atIndex) || "contact";
+    const domainPart = raw.slice(atIndex + 1);
+    const matchedDomains = COMMON_EMAIL_DOMAINS.filter((d) => d.startsWith(domainPart));
+    return (matchedDomains.length ? matchedDomains : COMMON_EMAIL_DOMAINS).map((d) => `${local}@${d}`);
+  })();
+  const ownerEmailSuggestions = (() => {
+    const raw = registerForm.ownerEmail.trim().toLowerCase();
+    if (!raw) return COMMON_EMAIL_DOMAINS.map((domain) => `owner@${domain}`);
+
+    const atIndex = raw.indexOf("@");
+    if (atIndex === -1) {
+      return COMMON_EMAIL_DOMAINS.map((domain) => `${raw}@${domain}`);
+    }
+
+    const local = raw.slice(0, atIndex) || "owner";
+    const domainPart = raw.slice(atIndex + 1);
+    const matchedDomains = COMMON_EMAIL_DOMAINS.filter((d) => d.startsWith(domainPart));
+    return (matchedDomains.length ? matchedDomains : COMMON_EMAIL_DOMAINS).map((d) => `${local}@${d}`);
+  })();
+  const ownerEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(registerForm.ownerEmail.trim());
+  useEffect(() => {
+    const query = registerForm.location.trim();
+    if (query.length < 3) {
+      setLocationOptions([]);
+      setLocationLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      try {
+        setLocationLoading(true);
+        const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&countrycodes=ph&limit=6&q=${encodeURIComponent(query)}`;
+        const response = await fetch(url, {
+          signal: controller.signal,
+          headers: {
+            Accept: "application/json",
+          },
+        });
+        if (!response.ok) throw new Error("Failed to fetch location suggestions.");
+        const data = (await response.json()) as Array<{ display_name: string }>;
+        const options = data.map((row) => row.display_name).filter(Boolean);
+        setLocationOptions(Array.from(new Set(options)).slice(0, 6));
+      } catch {
+        if (!controller.signal.aborted) setLocationOptions([]);
+      } finally {
+        if (!controller.signal.aborted) setLocationLoading(false);
+      }
+    }, 350);
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [registerForm.location]);
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -231,7 +315,17 @@ export default function Login() {
                   <p className="text-muted-foreground text-sm mt-1">Sign in to your BizPOS account</p>
                 </div>
 
-                {authError && <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">{authError}</p>}
+                {authError && (
+                  <div className="rounded-xl border border-rose-300 bg-rose-50 px-3 py-2.5">
+                    <div className="flex items-start gap-2.5">
+                      <AlertCircle className="mt-0.5 h-4 w-4 text-rose-600" />
+                      <div>
+                        <p className="text-xs font-semibold text-rose-700">Sign in failed</p>
+                        <p className="text-xs text-rose-600 mt-0.5">{authError}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 {authInfo && <p className="rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-xs text-primary">{authInfo}</p>}
 
                 <div className="space-y-3">
@@ -240,6 +334,7 @@ export default function Login() {
                     placeholder="Email address"
                     value={loginForm.email}
                     onChange={e => setLoginForm(f => ({ ...f, email: e.target.value }))}
+                    onKeyDown={submitOnEnter}
                     className={cn(inputClass, "h-11 px-4")}
                   />
 
@@ -248,6 +343,7 @@ export default function Login() {
                     placeholder="Password"
                     value={loginForm.password}
                     onChange={e => setLoginForm(f => ({ ...f, password: e.target.value }))}
+                    onKeyDown={submitOnEnter}
                     className={cn(inputClass, "h-11 px-4")}
                   />
                 </div>
@@ -446,28 +542,79 @@ export default function Login() {
                         ))}
                       </select>
 
-                      <input
-                        placeholder="Business location / address"
-                        value={registerForm.location}
-                        onChange={e => setRegisterForm(f => ({ ...f, location: e.target.value }))}
-                        className={cn(inputClass, "h-11 px-4")}
-                      />
+                      {/* Location */}
+                      <div className="relative">
+                        <input
+                          placeholder="Business location / address"
+                          value={registerForm.location}
+                          onChange={e => {
+                            setRegisterForm(f => ({ ...f, location: e.target.value }));
+                            setLocationOpen(true);
+                          }}
+                          onFocus={() => setLocationOpen(true)}
+                          onBlur={() => setTimeout(() => setLocationOpen(false), 120)}
+                          className={cn(inputClass, "h-11 px-4")}
+                        />
+                        {locationOpen && (locationLoading || locationOptions.length > 0) && (
+                          <div className="absolute z-30 mt-1 w-full rounded-xl border border-border bg-card shadow-card max-h-56 overflow-auto">
+                            {locationLoading ? (
+                              <p className="px-3 py-2 text-xs text-muted-foreground">Loading locations...</p>
+                            ) : (
+                              locationOptions.map((option) => (
+                                <button
+                                  key={option}
+                                  type="button"
+                                  onMouseDown={() => {
+                                    setRegisterForm(f => ({ ...f, location: option }));
+                                    setLocationOpen(false);
+                                  }}
+                                  className="block w-full text-left px-3 py-2 text-sm text-foreground hover:bg-secondary transition-colors"
+                                >
+                                  {option}
+                                </button>
+                              ))
+                            )}
+                          </div>
+                        )}
+                      </div>
 
                       <input
                         type="email"
                         placeholder="Business email"
                         value={registerForm.email}
                         onChange={e => setRegisterForm(f => ({ ...f, email: e.target.value }))}
-                        className={cn(inputClass, "h-11 px-4")}
+                        list="business-email-suggestions"
+                        className={cn(inputClass, "h-11 px-4 business-email-input")}
                       />
+                      <datalist id="business-email-suggestions">
+                        {businessEmailSuggestions.map((s) => (
+                          <option key={s} value={s} />
+                        ))}
+                      </datalist>
 
-                      <input
-                        type="tel"
-                        placeholder="Phone number"
-                        value={registerForm.phone}
-                        onChange={e => setRegisterForm(f => ({ ...f, phone: e.target.value }))}
-                        className={cn(inputClass, "h-11 px-4")}
-                      />
+                      {/* Phone */}
+                      <div>
+                        <div className="flex h-11 overflow-hidden rounded-xl border border-border bg-card focus-within:border-primary/60 focus-within:ring-2 focus-within:ring-primary/10">
+                          <span className="inline-flex items-center border-r border-border bg-secondary/50 px-3 text-sm font-semibold text-foreground">
+                            +63
+                          </span>
+                          <input
+                            type="tel"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            maxLength={10}
+                            placeholder="9XXXXXXXXX"
+                            value={registerForm.phone}
+                            onChange={e =>
+                              setRegisterForm((f) => ({
+                                ...f,
+                                phone: e.target.value.replace(/\D/g, "").slice(0, 10),
+                              }))
+                            }
+                            className="h-full w-full bg-transparent px-3 text-sm text-foreground placeholder:text-muted-foreground/85 outline-none"
+                          />
+                        </div>
+                      </div>
 
                       <button
                         onClick={() => step1Valid && setRegisterStep("account")}
@@ -541,16 +688,34 @@ export default function Login() {
                         placeholder="Your email (login email)"
                         value={registerForm.ownerEmail}
                         onChange={e => setRegisterForm(f => ({ ...f, ownerEmail: e.target.value }))}
+                        list="owner-email-suggestions"
                         className={cn(inputClass, "h-11 px-4")}
                       />
+                      <datalist id="owner-email-suggestions">
+                        {ownerEmailSuggestions.map((s) => (
+                          <option key={s} value={s} />
+                        ))}
+                      </datalist>
+                      {registerForm.ownerEmail && !ownerEmailValid && (
+                        <p className="text-xs text-destructive">Please enter a valid email address.</p>
+                      )}
 
-                      <input
-                        type="password"
-                        placeholder="Create a password"
-                        value={registerForm.ownerPassword}
-                        onChange={e => setRegisterForm(f => ({ ...f, ownerPassword: e.target.value }))}
-                        className={cn(inputClass, "h-11 px-4")}
-                      />
+                      <div className="relative">
+                        <input
+                          type={showOwnerPassword ? "text" : "password"}
+                          placeholder="Create a password"
+                          value={registerForm.ownerPassword}
+                          onChange={e => setRegisterForm(f => ({ ...f, ownerPassword: e.target.value }))}
+                          className={cn(inputClass, "h-11 px-4 pr-11")}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowOwnerPassword((v) => !v)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          {showOwnerPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
 
                       {registerForm.ownerPassword && (
                         <div className="space-y-1.5">
@@ -570,18 +735,18 @@ export default function Login() {
                         </div>
                       )}
 
-                      <button
-                        onClick={handleRegisterSubmit}
-                        type="button"
-                        disabled={authLoading || !registerForm.ownerName || !registerForm.ownerEmail || !registerForm.ownerPassword}
-                        className={cn(
-                          "w-full py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200",
-                          !authLoading && registerForm.ownerName && registerForm.ownerEmail && registerForm.ownerPassword
-                            ? "gradient-primary text-white shadow-primary hover:shadow-lg"
-                            : "bg-muted text-muted-foreground cursor-not-allowed"
-                        )}
-                      >
-                        <UserPlus className="w-4 h-4" />
+                        <button
+                          onClick={handleRegisterSubmit}
+                          type="button"
+                          disabled={authLoading || !registerForm.ownerName || !registerForm.ownerEmail || !ownerEmailValid || !registerForm.ownerPassword}
+                          className={cn(
+                            "w-full py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200",
+                            !authLoading && registerForm.ownerName && registerForm.ownerEmail && ownerEmailValid && registerForm.ownerPassword
+                              ? "gradient-primary text-white shadow-primary hover:shadow-lg"
+                              : "bg-muted text-muted-foreground cursor-not-allowed"
+                          )}
+                        >
+                          <UserPlus className="w-4 h-4" />
                         {authLoading ? "Submitting..." : "Submit Registration"}
                       </button>
 

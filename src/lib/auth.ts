@@ -19,26 +19,13 @@ function sanitizeFileName(fileName: string): string {
   return fileName.toLowerCase().replace(/[^a-z0-9.\-_]/g, "-");
 }
 
-export async function signInWithEmailPassword(email: string, password: string): Promise<{ role: UserRole; business: Business }> {
+async function resolveAccessForUser(userId: string, fallbackEmail?: string | null): Promise<{ role: UserRole; business: Business }> {
   const supabase = requireSupabase();
-  const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-
-  if (authError) throw authError;
-  if (!authData.user) throw new Error("No user returned by Supabase.");
 
   const { data: membership, error: membershipError } = await supabase
     .from("user_memberships")
-    .select(
-      `
-      role,
-      business:businesses(id,name,type,activation_status),
-      branch:branches(id,name,location)
-    `
-    )
-    .eq("user_id", authData.user.id)
+    .select("role,business_id,branch_id")
+    .eq("user_id", userId)
     .order("created_at", { ascending: true })
     .limit(1)
     .maybeSingle();
@@ -58,11 +45,51 @@ export async function signInWithEmailPassword(email: string, password: string): 
     };
   }
 
-  if (!membership || !membership.business) {
+  if (membership && membership.business_id) {
+    const businessQuery = supabase
+      .from("businesses")
+      .select("id,name,type,logo_url,activation_status")
+      .eq("id", membership.business_id)
+      .maybeSingle();
+
+    const branchQuery = membership.branch_id
+      ? supabase.from("branches").select("id,name,location").eq("id", membership.branch_id).maybeSingle()
+      : Promise.resolve({ data: null, error: null });
+
+    const [businessResult, branchResult] = await Promise.all([businessQuery, branchQuery]);
+    if (businessResult.error) throw businessResult.error;
+    if (branchResult.error) throw branchResult.error;
+
+    if (businessResult.data) {
+      const branchRow = branchResult.data ?? { id: "main", name: "Main Branch", location: "N/A" };
+      const business: Business = {
+        id: businessResult.data.id,
+        name: businessResult.data.name,
+        type: toBusinessType(businessResult.data.type),
+        logoUrl: businessResult.data.logo_url ?? null,
+        activationStatus: businessResult.data.activation_status ?? "pending",
+        activationKey: `ACT-${businessResult.data.id.split("-")[0].toUpperCase()}`,
+        branches: [
+          {
+            id: branchRow.id,
+            name: branchRow.name,
+            location: branchRow.location,
+          },
+        ],
+      };
+
+      return {
+        role: toAppRole(membership.role),
+        business,
+      };
+    }
+  }
+
+  if (!membership || !membership.business_id) {
     const { data: ownedBusiness, error: ownedBusinessError } = await supabase
       .from("businesses")
-      .select("id,name,type,address,activation_status")
-      .eq("owner_user_id", authData.user.id)
+      .select("id,name,type,address,logo_url,activation_status")
+      .eq("owner_user_id", userId)
       .order("created_at", { ascending: true })
       .limit(1)
       .maybeSingle();
@@ -97,7 +124,7 @@ export async function signInWithEmailPassword(email: string, password: string): 
       }
 
       const { error: membershipInsertError } = await supabase.from("user_memberships").insert({
-        user_id: authData.user.id,
+        user_id: userId,
         business_id: ownedBusiness.id,
         branch_id: branch.id,
         role: "admin",
@@ -111,6 +138,7 @@ export async function signInWithEmailPassword(email: string, password: string): 
           id: ownedBusiness.id,
           name: ownedBusiness.name,
           type: toBusinessType(ownedBusiness.type),
+          logoUrl: ownedBusiness.logo_url ?? null,
           activationStatus: ownedBusiness.activation_status ?? "pending",
           activationKey: `ACT-${ownedBusiness.id.split("-")[0].toUpperCase()}`,
           branches: [{ id: branch.id, name: branch.name, location: branch.location }],
@@ -118,9 +146,11 @@ export async function signInWithEmailPassword(email: string, password: string): 
       };
     }
 
-    const inferredName = authData.user.email ? `${authData.user.email.split("@")[0]}'s Business` : "My Business";
+    const inferredName = fallbackEmail ? `${fallbackEmail.split("@")[0]}'s Business` : "My Business";
     const inferredType = "retail";
-    const inferredEmail = authData.user.email || email;
+    const inferredEmail = fallbackEmail ?? null;
+    const inferredPhone = null;
+    const inferredAddress = null;
 
     const { data: createdBusiness, error: createdBusinessError } = await supabase
       .from("businesses")
@@ -128,13 +158,13 @@ export async function signInWithEmailPassword(email: string, password: string): 
         name: inferredName,
         type: inferredType,
         email: inferredEmail,
-        phone: null,
-        address: null,
-        owner_user_id: authData.user.id,
+        phone: inferredPhone,
+        address: inferredAddress,
+        owner_user_id: userId,
         is_configured: false,
         activation_status: "pending",
       })
-      .select("id,name,type")
+      .select("id,name,type,logo_url")
       .single();
 
     if (createdBusinessError) throw createdBusinessError;
@@ -153,7 +183,7 @@ export async function signInWithEmailPassword(email: string, password: string): 
     if (createdBranchError) throw createdBranchError;
 
     const { error: createdMembershipError } = await supabase.from("user_memberships").insert({
-      user_id: authData.user.id,
+      user_id: userId,
       business_id: createdBusiness.id,
       branch_id: createdBranch.id,
       role: "admin",
@@ -167,6 +197,7 @@ export async function signInWithEmailPassword(email: string, password: string): 
         id: createdBusiness.id,
         name: createdBusiness.name,
         type: toBusinessType(createdBusiness.type),
+        logoUrl: createdBusiness.logo_url ?? null,
         activationStatus: "pending",
         activationKey: `ACT-${createdBusiness.id.split("-")[0].toUpperCase()}`,
         branches: [{ id: createdBranch.id, name: createdBranch.name, location: createdBranch.location }],
@@ -174,28 +205,28 @@ export async function signInWithEmailPassword(email: string, password: string): 
     };
   }
 
-  const biz = Array.isArray(membership.business) ? membership.business[0] : membership.business;
-  const branchRaw = Array.isArray(membership.branch) ? membership.branch[0] : membership.branch;
-  const branchRow = branchRaw ?? { id: "main", name: "Main Branch", location: "N/A" };
-  const business: Business = {
-    id: biz.id,
-    name: biz.name,
-    type: toBusinessType(biz.type),
-    activationStatus: biz.activation_status ?? "pending",
-    activationKey: `ACT-${biz.id.split("-")[0].toUpperCase()}`,
-    branches: [
-      {
-        id: branchRow.id,
-        name: branchRow.name,
-        location: branchRow.location,
-      },
-    ],
-  };
+  throw new Error("Unable to resolve account access.");
+}
 
-  return {
-    role: toAppRole(membership.role),
-    business,
-  };
+export async function signInWithEmailPassword(email: string, password: string): Promise<{ role: UserRole; business: Business }> {
+  const supabase = requireSupabase();
+  const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (authError) throw authError;
+  if (!authData.user) throw new Error("No user returned by Supabase.");
+
+  return resolveAccessForUser(authData.user.id, authData.user.email || email);
+}
+
+export async function loadAccessFromCurrentSession(): Promise<{ role: UserRole; business: Business } | null> {
+  const supabase = requireSupabase();
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError) throw userError;
+  if (!userData.user) return null;
+  return resolveAccessForUser(userData.user.id, userData.user.email ?? null);
 }
 
 type RegisterPayload = {
@@ -247,7 +278,7 @@ export async function registerBusinessOwner(payload: RegisterPayload): Promise<v
       name: payload.businessName,
       type: payload.businessType,
       email: payload.email,
-      phone: payload.phone || null,
+      phone: payload.phone ? `+63${payload.phone}` : null,
       address: payload.location,
       logo_url: logoUrl,
       owner_user_id: signUpData.user.id,

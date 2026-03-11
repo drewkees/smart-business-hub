@@ -175,4 +175,10 @@
     background: hsl(var(--border));
     border-radius: 2px;
   }
+
+  /* Keep datalist suggestions but remove the native dropdown icon on email input */
+  .business-email-input::-webkit-calendar-picker-indicator {
+    display: none !important;
+    -webkit-appearance: none;
+  }
 }

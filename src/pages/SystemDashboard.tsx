@@ -1,4 +1,4 @@
-import { useApp, DEMO_BUSINESSES } from "@/contexts/AppContext";
+﻿import { useApp, DEMO_BUSINESSES } from "@/contexts/AppContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { BUSINESS_TYPE_CONFIG } from "@/lib/businessConfig";
 import { motion } from "framer-motion";
@@ -12,7 +12,7 @@ import {
 const PLATFORM_STATS = [
   { label: "Total Businesses", value: "5", change: "+2 this month", icon: Building2, color: "text-primary", bg: "bg-primary/10" },
   { label: "Active Branches", value: "9", change: "+1 this week", icon: Globe, color: "text-success", bg: "bg-success/10" },
-  { label: "Platform Revenue", value: "₱2.4M", change: "+18.2% vs last mo.", icon: DollarSign, color: "text-warning", bg: "bg-warning/10" },
+  { label: "Platform Revenue", value: "P2.4M", change: "+18.2% vs last mo.", icon: DollarSign, color: "text-warning", bg: "bg-warning/10" },
   { label: "Total Users", value: "47", change: "+5 this month", icon: Users, color: "text-info", bg: "bg-info/10" },
 ];
 
@@ -108,7 +108,7 @@ export default function SystemDashboard() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-foreground truncate">{biz.name}</p>
-                      <p className="text-xs text-muted-foreground">{cfg.label} · {biz.branches.length} {biz.branches.length === 1 ? "branch" : "branches"}</p>
+                      <p className="text-xs text-muted-foreground">{cfg.label} - {biz.branches.length} {biz.branches.length === 1 ? "branch" : "branches"}</p>
                     </div>
                     <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", PLAN_COLORS[plan])}>
                       {plan}
@@ -199,3 +199,4 @@ export default function SystemDashboard() {
     </AppLayout>
   );
 }
+
