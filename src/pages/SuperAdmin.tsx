@@ -10,15 +10,18 @@ import { SuperAdminHeader } from "@/components/super-admin/SuperAdminHeader";
 import { SuperAdminSidebar } from "@/components/super-admin/SuperAdminSidebar";
 import { SystemMenuPanel } from "@/components/super-admin/SystemMenuPanel";
 import { UsersPanel } from "@/components/super-admin/UsersPanel";
-import type { ActivationStatus, BusinessRow, SuperTab, UserRow } from "@/components/super-admin/types";
+import { BusinessTypePage } from "@/pages/BusinessTypePage";
+import type { ActivationStatus, BusinessRow, SuperTab } from "@/components/super-admin/types";
 
-const MOCK_USERS: UserRow[] = [
-  { id: "u1", email: "maria@email.com", role: "Customer", business: "Flavor Hub Restaurant", orders: 24, total_spent: 38400, tier: "Silver" },
-  { id: "u2", email: "jose@email.com", role: "Customer", business: "Golden Rice Trading", orders: 18, total_spent: 29700, tier: "Silver" },
-  { id: "u3", email: "ana@email.com", role: "Customer", business: "FreshMart Grocery", orders: 31, total_spent: 52800, tier: "Gold" },
-  { id: "u4", email: "mark@email.com", role: "Customer", business: "MediCare Pharmacy", orders: 9, total_spent: 14200, tier: "Regular" },
-  { id: "u5", email: "lisa@email.com", role: "Customer", business: "StyleZone Salon", orders: 45, total_spent: 71600, tier: "Gold" },
-];
+// Simple placeholder for new tabs
+function PlaceholderPanel({ title, description }: { title: string; description: string }) {
+  return (
+    <div className="flex min-h-[400px] flex-col items-center justify-center rounded-[26px] border border-slate-700/80 bg-[#1a2436] text-center">
+      <p className="text-xl font-bold text-white">{title}</p>
+      <p className="mt-2 text-sm text-slate-400">{description}</p>
+    </div>
+  );
+}
 
 export default function SuperAdmin() {
   const { logout } = useApp();
@@ -32,22 +35,20 @@ export default function SuperAdmin() {
   const filteredBusinesses = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return businesses;
-    return businesses.filter((b) => b.name.toLowerCase().includes(q) || (b.email ?? "").toLowerCase().includes(q) || b.id.toLowerCase().includes(q));
+    return businesses.filter(
+      (b) =>
+        b.name.toLowerCase().includes(q) ||
+        (b.email ?? "").toLowerCase().includes(q) ||
+        b.id.toLowerCase().includes(q),
+    );
   }, [businesses, search]);
-
-  const filteredUsers = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return MOCK_USERS;
-    return MOCK_USERS.filter((u) => u.email.toLowerCase().includes(q) || u.business.toLowerCase().includes(q));
-  }, [search]);
 
   const stats = useMemo(() => {
     const total = businesses.length;
     const active = businesses.filter((b) => b.activation_status === "active").length;
     const pending = businesses.filter((b) => b.activation_status === "pending").length;
     const suspended = businesses.filter((b) => b.activation_status === "suspended").length;
-    const totalUsers = MOCK_USERS.length + businesses.length * 8;
-    return { total, active, pending, suspended, totalUsers };
+    return { total, active, pending, suspended, totalUsers: businesses.length * 8 };
   }, [businesses]);
 
   async function loadBusinesses() {
@@ -56,7 +57,6 @@ export default function SuperAdmin() {
       setLoading(false);
       return;
     }
-
     try {
       setLoading(true);
       setError(null);
@@ -75,10 +75,12 @@ export default function SuperAdmin() {
 
   async function setStatus(id: string, status: ActivationStatus) {
     if (!supabase) return;
-
     try {
       setSavingId(id);
-      const { error: updateError } = await supabase.from("businesses").update({ activation_status: status }).eq("id", id);
+      const { error: updateError } = await supabase
+        .from("businesses")
+        .update({ activation_status: status })
+        .eq("id", id);
       if (updateError) throw updateError;
       setBusinesses((prev) => prev.map((b) => (b.id === id ? { ...b, activation_status: status } : b)));
     } catch (e: any) {
@@ -93,36 +95,53 @@ export default function SuperAdmin() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-100">
-      <div className="flex min-h-screen">
-        <SuperAdminSidebar tab={tab} onTabChange={setTab} onLogout={logout} />
+    <div className="flex min-h-screen bg-[#06101f]">
+      <SuperAdminSidebar tab={tab} onTabChange={setTab} onLogout={logout} />
 
-        <section className="min-w-0 flex-1">
-          <SuperAdminHeader />
+      <section className="flex min-w-0 flex-1 flex-col">
+        <SuperAdminHeader />
 
-          <main className="p-4 md:p-8">
-            {error && <p className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p>}
-            {tab === "overview" && (
-              <OverviewPanel
-                stats={stats}
-                loading={loading}
-                businesses={businesses}
-                onRefresh={loadBusinesses}
-                onActivate={setStatus}
-                savingId={savingId}
-              />
-            )}
-            {tab === "businesses" && (
-              <BusinessesPanel rows={filteredBusinesses} loading={loading} savingId={savingId} onActivate={setStatus} />
-            )}
-            {tab === "users" && <UsersPanel />}
-            {tab === "systemmenu" && <SystemMenuPanel />}
-            {tab === "menuuserauth" && <MenuUserAuthorizationPanel />}
-            {tab === "billing" && <BillingPanel totalBusinesses={stats.total} activeBusinesses={stats.active} />}
-            {tab === "settings" && <SettingsPanel />}
-          </main>
-        </section>
-      </div>
+        <main className="flex-1 overflow-auto p-4 md:p-8">
+          {error && (
+            <p className="mb-4 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-300">
+              {error}
+            </p>
+          )}
+
+          {tab === "overview" && (
+            <OverviewPanel
+              stats={stats}
+              loading={loading}
+              businesses={businesses}
+              onRefresh={loadBusinesses}
+              onActivate={setStatus}
+              savingId={savingId}
+            />
+          )}
+          {tab === "businesses" && (
+            <BusinessesPanel
+              rows={filteredBusinesses}
+              loading={loading}
+              savingId={savingId}
+              onActivate={setStatus}
+            />
+          )}
+          {tab === "users" && <UsersPanel />}
+          {tab === "businesstype" && <BusinessTypePage />}
+          {tab === "systemmenu" && <SystemMenuPanel />}
+          {tab === "menuuserauth" && <MenuUserAuthorizationPanel />}
+          {tab === "billing" && (
+            <BillingPanel totalBusinesses={stats.total} activeBusinesses={stats.active} />
+          )}
+          {tab === "notifications" && (
+            <PlaceholderPanel title="Notifications" description="Platform-wide alerts and notification management coming soon." />
+          )}
+          {tab === "integrations" && (
+            <PlaceholderPanel title="Integrations" description="Third-party service integrations and webhooks coming soon." />
+          )}
+          {tab === "settings" && <SettingsPanel />}
+        </main>
+      </section>
     </div>
   );
 }
