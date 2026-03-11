@@ -20,7 +20,7 @@ import Reports from "@/pages/Reports";
 import Settings from "@/pages/Settings";
 import StaffRoles from "@/pages/StaffRoles";
 import Suppliers from "@/pages/Suppliers";
-import SystemDashboard from "@/pages/SystemDashboard";
+import SuperAdmin from "@/pages/SuperAdmin";
 
 const queryClient = new QueryClient();
 
@@ -42,14 +42,10 @@ function AppRoutes() {
 
   if (!isLoggedIn) return <Login />;
 
-  if (role === "owner") {
+  if (role === "superadmin") {
     return (
       <Routes>
-        <Route path="/" element={<SystemDashboard />} />
-        <Route path="/businesses" element={<BusinessManagement />} />
-        <Route path="/platform-users" element={<Customers />} />
-        <Route path="/billing" element={<Settings />} />
-        <Route path="/system-settings" element={<Settings />} />
+        <Route path="/" element={<SuperAdmin />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     );

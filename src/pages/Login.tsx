@@ -66,8 +66,8 @@ export default function Login() {
   function handleDemoLogin(role: UserRole = "admin") {
     setAuthError(null);
     setAuthInfo(null);
-    if (role === "owner") {
-      login("owner", DEMO_BUSINESSES[0]);
+    if (role === "superadmin") {
+      login("superadmin", DEMO_BUSINESSES[0]);
     } else {
       login(role, DEMO_BUSINESSES[0]);
     }
@@ -374,14 +374,14 @@ export default function Login() {
                 {/* Demo quick access cards */}
                 <div className="grid grid-cols-1 gap-2">
                   <button
-                    onClick={() => handleDemoLogin("owner")}
+                    onClick={() => handleDemoLogin("superadmin")}
                     className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card hover:border-warning/40 hover:bg-warning/5 transition-all duration-200 group"
                   >
                     <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center flex-shrink-0">
                       <Crown className="w-4 h-4 text-white" />
                     </div>
                     <div className="text-left">
-                      <p className="text-sm font-semibold text-foreground">System Owner</p>
+                      <p className="text-sm font-semibold text-foreground">Super Admin</p>
                       <p className="text-xs text-muted-foreground">Manage all businesses & platform</p>
                     </div>
                     <ChevronRight className="w-4 h-4 text-muted-foreground ml-auto group-hover:text-warning transition-colors" />

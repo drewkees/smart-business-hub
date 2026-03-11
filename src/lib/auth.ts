@@ -11,7 +11,7 @@ function toBusinessType(value: string): BusinessType {
 }
 
 function toAppRole(role: string): UserRole {
-  if (role === "owner") return "owner";
+  if (role === "superadmin" || role === "owner") return "superadmin";
   return role === "cashier" ? "cashier" : "admin";
 }
 
@@ -32,9 +32,9 @@ async function resolveAccessForUser(userId: string, fallbackEmail?: string | nul
 
   if (membershipError) throw membershipError;
 
-  if (membership && membership.role === "owner") {
+  if (membership && (membership.role === "superadmin" || membership.role === "owner")) {
     return {
-      role: "owner",
+      role: "superadmin",
       business: {
         id: "platform",
         name: "BizPOS Pro",

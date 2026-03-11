@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState, type ReactNode }
 import { loadAccessFromCurrentSession } from "@/lib/auth";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 
-export type UserRole = "owner" | "admin" | "cashier";
+export type UserRole = "superadmin" | "admin" | "cashier";
 
 export type BusinessType =
   | "restaurant"
@@ -226,7 +226,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         sidebarOpen,
         setSidebarOpen,
         businesses: DEMO_BUSINESSES,
-        isActivationPending: role !== "owner" && (currentBusiness.activationStatus ?? "active") !== "active",
+        isActivationPending: role !== "superadmin" && (currentBusiness.activationStatus ?? "active") !== "active",
         isAuthReady,
       }}
     >

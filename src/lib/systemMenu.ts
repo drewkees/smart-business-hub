@@ -25,6 +25,18 @@ export type SaveSchemaInput = {
   udfmaintained?: boolean;
 };
 
+function normalizeSchemaInput(input: SaveSchemaInput) {
+  return {
+    menuid: input.menuid.trim(),
+    menuname: input.menuname.trim(),
+    menucmd: input.menucmd?.trim() || null,
+    objectcode: input.objectcode?.trim() || null,
+    menutype: input.menutype,
+    menuicon: input.menuicon?.trim() || null,
+    udfmaintained: Boolean(input.udfmaintained),
+  };
+}
+
 export async function listSchemas(search = ""): Promise<SchemaRow[]> {
   const supabase = requireSupabase();
   const q = search.trim();
@@ -47,16 +59,7 @@ export async function listSchemas(search = ""): Promise<SchemaRow[]> {
 
 export async function createSchema(input: SaveSchemaInput): Promise<SchemaRow> {
   const supabase = requireSupabase();
-  const payload = {
-    menuid: input.menuid.trim(),
-    menuname: input.menuname.trim(),
-    menucmd: input.menucmd?.trim() || null,
-    objectcode: input.objectcode?.trim() || null,
-    menutype: input.menutype,
-    menuicon: input.menuicon?.trim() || null,
-    udfmaintained: Boolean(input.udfmaintained),
-  };
-
+  const payload = normalizeSchemaInput(input);
   const { data, error } = await supabase.from("schemas").insert(payload).select("*").single();
   if (error) throw error;
   return data as SchemaRow;
@@ -64,16 +67,7 @@ export async function createSchema(input: SaveSchemaInput): Promise<SchemaRow> {
 
 export async function updateSchema(itemid: number, input: SaveSchemaInput): Promise<SchemaRow> {
   const supabase = requireSupabase();
-  const payload = {
-    menuid: input.menuid.trim(),
-    menuname: input.menuname.trim(),
-    menucmd: input.menucmd?.trim() || null,
-    objectcode: input.objectcode?.trim() || null,
-    menutype: input.menutype,
-    menuicon: input.menuicon?.trim() || null,
-    udfmaintained: Boolean(input.udfmaintained),
-  };
-
+  const payload = normalizeSchemaInput(input);
   const { data, error } = await supabase.from("schemas").update(payload).eq("itemid", itemid).select("*").single();
   if (error) throw error;
   return data as SchemaRow;

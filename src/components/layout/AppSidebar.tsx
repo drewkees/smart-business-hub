@@ -75,7 +75,7 @@ const CASHIER_LINKS = [
 ];
 
 const ROLE_BADGE: Record<string, { label: string; style: string }> = {
-  owner: { label: "System Owner", style: "bg-warning/20 text-warning" },
+  superadmin: { label: "Super Admin", style: "bg-warning/20 text-warning" },
   admin: { label: "Admin View", style: "bg-primary/20 text-primary-glow" },
   cashier: { label: "Cashier View", style: "bg-success/20 text-success" },
 };
@@ -83,7 +83,7 @@ const ROLE_BADGE: Record<string, { label: string; style: string }> = {
 export function AppSidebar() {
   const { role, currentBusiness, currentBranch, logout, sidebarOpen, setSidebarOpen, isActivationPending } = useApp();
   const cached = readSidebarAuthCache();
-  const links = role === "owner"
+  const links = role === "superadmin"
     ? OWNER_LINKS
     : isActivationPending
       ? [{ to: "/", label: "Dashboard", icon: LayoutDashboard, end: true }]
@@ -92,7 +92,7 @@ export function AppSidebar() {
         : CASHIER_LINKS;
 
   const location = useLocation();
-  const isOwner = role === "owner";
+  const isOwner = role === "superadmin";
   const badge = ROLE_BADGE[role];
   const bizConfig = !isOwner ? BUSINESS_TYPE_CONFIG[currentBusiness.type] : null;
   const BizIcon = bizConfig?.icon;
