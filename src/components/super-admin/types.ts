@@ -1,6 +1,17 @@
 export type ActivationStatus = "pending" | "active" | "suspended";
 
-export type SuperTab = "overview" | "businesses" | "users" | "billing" | "systemmenu" | "menuuserauth" | "settings";
+export type SuperTab =
+  | "overview"
+  | "businesses"
+  | "users"
+  | "billing"
+  | "systemmenu"
+  | "menuuserauth"
+  | "businesstype"
+  | "settings"
+  | "audit"
+  | "integrations"
+  | "notifications";
 
 export type BusinessRow = {
   id: string;
@@ -20,6 +31,17 @@ export type UserRow = {
   orders: number;
   total_spent: number;
   tier: "Silver" | "Gold" | "Regular";
+};
+
+export type RealUserRow = {
+  id: string;
+  email: string | null;
+  full_name: string | null;
+  role: string;
+  business_name: string;
+  business_id: string | null;
+  created_at: string | null;
+  status: "active" | "pending" | "suspended";
 };
 
 export type OverviewStats = {
